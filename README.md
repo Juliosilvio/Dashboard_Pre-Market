@@ -15,9 +15,7 @@ posição (Índice ou Dólar) tende a fazer mais sentido no dia.
 
 ## Demonstração
 
-[▶ Assistir ao vídeo de demonstração](https://github.com/Juliosilvio/Dashboard_Pre-Market/blob/main/demo.mp4)
-
-(abre a própria página do GitHub com o player — não baixa o arquivo)
+https://github.com/user-attachments/assets/dffc9a85-0208-480d-a3fd-7e9acb04443a
 
 ## Estrutura
 
