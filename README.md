@@ -13,6 +13,12 @@ posição (Índice ou Dólar) tende a fazer mais sentido no dia.
 > conexões específicas, fontes de dado pontuais) foram removidos ou
 > generalizados. O projeto completo roda localmente, conectado ao MetaTrader 5.
 
+## Demonstração
+
+<video src="demo.mp4" controls width="100%"></video>
+
+(Se o player não aparecer, [baixe o vídeo aqui](demo.mp4).)
+
 ## Estrutura
 
 ```
