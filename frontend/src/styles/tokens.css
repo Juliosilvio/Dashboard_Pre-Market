@@ -1,0 +1,1111 @@
+/*
+  tokens.css — paleta e componentes base do painel.
+  Portado 1:1 do mockup aprovado (Claude Design canvas, "Painel INDICE/DOLAR")
+  publicado em 
+  Paleta dark do skill dataviz (categoricos: azul=juros, laranja=frc,
+  aqua=cupom de inflacao).
+*/
+
+:root {
+  --page: #0d0d0d;
+  --surface: #121211; /* pedido do usuario: fundo dos cards mais pro preto (era #1a1a19, cinza opaco) */
+  --text-1: #ffffff;
+  --text-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --good: #0ca30c;
+  --critical: #d03b3b;
+  --s-juros: #4da6ff; /* pedido do usuario: linhas mais brilhantes — azul mais vivido */
+  --s-frc: #ff7a33; /* mais vivido */
+  --s-cupom: #22d992; /* mais vivido */
+  /* 4o slot categorico, so pro card do Trio (DDI x FRC) — validado junto com
+     os outros 3 pelo script do skill dataviz (validate_palette.js), todos os
+     pares (incluindo --s-frc, que aparece ao lado dele nesse card) passaram
+     CVD/contraste/luminosidade. */
+  --s-ddi: #cc7ef2; /* mais vivido */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* pedido do usuario: "em 50% de zoom a tela treme" — causa: o canvas
+     livre (dashboard-canvas-escala) recalcula sua altura toda vez que a
+     largura medida muda (ver useLarguraContainer/App.jsx); quando essa
+     altura cruza o limiar de caber ou nao na janela, a barra de rolagem
+     vertical da PAGINA aparece/desaparece, o que muda a largura disponivel
+     pra qualquer elemento width:100% (inclusive o .dashboard-canvas-viewport
+     que o ResizeObserver mede) por causa da largura da propria barra —
+     mudou a largura medida, o React recalcula escala, a altura muda nem
+     que seja 1px, a barra troca de estado de novo, e o ciclo se repete pra
+     sempre (um loop classico de "scrollbar induced layout thrashing"; em
+     alguns niveis de zoom a altura do canvas fica bem em cima desse limiar,
+     entao o loop fica visivel/perceptivel como tremedeira). scrollbar-gutter:
+     stable reserva o espaco da barra de rolagem SEMPRE (apareça ela ou nao)
+     — a largura disponivel nunca muda por causa da barra, o que quebra o
+     loop de vez. Suportado em Chrome/Edge 94+ (ambiente alvo deste
+     projeto).*/
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text-1);
+}
+
+.mono {
+  font-family: "Arial-black", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.viz-root {
+  /* pedido do usuario: "a pagina esta limitada, tire este limite, a pagina
+     tem que se adaptar a tela" — antes tinha max-width:1440px + margin:0
+     auto, entao em monitor grande sobrava espaco morto dos dois lados em
+     vez do dashboard-canvas aproveitar a tela toda. Sem max-width, a pagina
+     ocupa 100% da largura disponivel em qualquer tamanho de tela; o modo
+     empilhado de tela pequena (ver App.jsx, TELA_PEQUENA_PX) continua
+     igual. */
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+}
+
+/* mesmo ponto de corte do TELA_PEQUENA_PX em App.jsx — abaixo disso o
+   layout ja empilhou, entao vale reduzir o padding tambem */
+@media (max-width: 1280px) {
+  .viz-root {
+    padding: 10px;
+  }
+}
+
+/* ---- header ---- */
+
+.painel-header {
+  /* justify-content:flex-end (era space-between) — pedido do usuario: tirar
+     o titulo/subtitulo do lado esquerdo (App.jsx). So sobrou a faixa de
+     chips; com um unico filho, space-between jogava ela pra esquerda (sem
+     "espaco entre" dois itens pra distribuir), entao mudou pra flex-end
+     pra manter os chips encostados na direita, igual ficavam antes. */
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  margin-bottom: 0.5px;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.painel-titulo {
+  color: var(--text-1);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.painel-subtitulo {
+  color: var(--muted);
+  font-size: 5px;
+  margin-top: 1px;
+}
+
+.painel-chips {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.botao-salvar-layout {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.botao-salvar-layout:hover:not(:disabled) {
+  border-color: var(--s-juros);
+}
+
+.botao-salvar-layout:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* menu de troca de view (Indice/Dolar <-> ativos extra, ex.: Nasdaq) no
+   cabecalho — pedido do usuario: um menu que troca a view dentro do mesmo
+   app, em vez de um segundo localhost/processo. Virou um DROPDOWN (pedido
+   do usuario: "uma setinha... clicamos e aparece varios ativos", igual um
+   select de pais em formulario) em vez de botoes lado a lado — escala
+   melhor conforme mais ativos extra forem entrando em
+   ativos_referencia_extra. position:relative aqui pra lista abrir ancorada
+   embaixo do botao. */
+.menu-ativos {
+  position: relative;
+}
+
+.menu-ativos-atual {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.menu-ativos-atual:hover {
+  border-color: var(--s-juros);
+}
+
+.menu-ativos-seta {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.menu-ativos-lista {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 160px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 50;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.menu-ativos-item {
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  font-size: 20px;
+  font-weight: 600;
+  text-align: left;
+  padding: 7px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.menu-ativos-item:hover {
+  background: var(--grid);
+  color: var(--text-1);
+}
+
+.menu-ativos-item--ativo {
+  background: var(--s-juros);
+  color: var(--page);
+}
+
+.menu-ativos-item--ativo:hover {
+  background: var(--s-juros);
+  color: var(--page);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  font-size: 15px; /* pedido do usuario: "aumente mais" — 3o incremento (12->13->15->17) */
+  color: var(--text-2);
+}
+
+.chip--muted {
+  color: var(--muted);
+  font-size: 20px;
+}
+
+.chip--toggle {
+  /* checkbox "Mostrar pontos" no cabecalho — ver App.jsx/useConfigVisual.js */
+  cursor: pointer;
+  user-select: none;
+}
+
+.chip--toggle:hover {
+  border-color: var(--s-juros);
+}
+
+.chip--toggle input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--s-juros);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--good);
+  animation: pulse 2.2s ease-in-out infinite;
+}
+
+.dot--erro {
+  background: var(--critical);
+  animation: none;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ---- canvas livre (paineis soltos, arrastaveis e redimensionaveis) ---- */
+
+.dashboard-canvas-viewport {
+  /* largura medida aqui (ver useLarguraContainer em App.jsx) pra calcular a
+     escala no modo "auto-fit" (ver MODO_CANVAS em App.jsx). overflow-x:auto
+     (era hidden) — no modo "fixo" o canvas pode ser mais largo que a janela
+     de verdade (sem transform:scale() ajustando nada), entao precisa de
+     rolagem horizontal pra nao cortar painel nenhum; no modo "auto-fit" isso
+     nunca aciona de verdade, a escala ja cabe exatamente. Sem overflow-y: a
+     pagina toda rola verticalmente, normal, em vez de uma caixa de rolagem
+     aninhada. */
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* barra de rolagem horizontal do canvas livre, estilizada — pedido do
+   usuario: "quero tirar essa barra de rolagem ... a pagina principal tem
+   espaco sobrando" (print mostrando uma seta vermelha apontando pra ela).
+   O canvas em modo "fixo" so precisa dessa rolagem quando o layout salvo
+   (arrastado/redimensionado pelo proprio usuario, ver layout.json) fica
+   mais largo que a janela — nesse caso ela aparecia com a cor PADRAO do
+   navegador (branca, sem estilo), destoando muito do tema escuro e
+   flutuando numa faixa de canvas vazia, o que parecia um bug visual. Nao
+   da pra so remover (overflow-x:hidden) sem risco: cortaria de vez o
+   acesso a paineis arrastados pra fora da tela (ex.: Cupom/Dolar Teorico)
+   sem nenhum jeito de rolar ate eles. Em vez disso so afinamos e escurecemos
+   a barra pra combinar com o resto do painel — some visualmente, continua
+   funcionando quando precisa. scrollbar-width/-color e o padrao (Firefox);
+   as regras ::-webkit-scrollbar-* cobrem Chrome/Edge (ambiente alvo). */
+.dashboard-canvas-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: var(--axis) var(--page);
+}
+
+.dashboard-canvas-viewport::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.dashboard-canvas-viewport::-webkit-scrollbar-track {
+  background: var(--page);
+}
+
+.dashboard-canvas-viewport::-webkit-scrollbar-thumb {
+  background: var(--axis);
+  border-radius: 4px;
+}
+
+.dashboard-canvas-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+.dashboard-canvas-escala {
+  /* tamanho JA escalado — e este wrapper que ocupa espaco de verdade no
+     fluxo da pagina; o filho (.dashboard-canvas) so redesenha visualmente
+     por dentro dele via transform:scale(), sem mudar o espaco que reserva */
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-canvas {
+  position: relative;
+  transform-origin: top left;
+}
+
+.painel-livre {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+}
+
+.painel-cabecalho {
+  flex: none;
+  height: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: move;
+  color: var(--muted);
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  line-height: 100;
+  user-select: none;
+  background: var(--surface);
+  border: 10px solid var(--border);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+}
+
+.painel-cabecalho:hover {
+  color: var(--text-2);
+  border-color: var(--s-juros);
+}
+
+.painel-conteudo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.painel-conteudo > .chart-card,
+.painel-conteudo > .quotes-card {
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: 0 0 10px 10px;
+}
+
+.painel-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 30px;
+  height: 30px;
+  cursor: nwse-resize;
+}
+
+.painel-resize-handle::after {
+  content: "";
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--axis);
+  border-bottom: 2px solid var(--axis);
+}
+
+/* ---- modo pilha (celular/tablet, <=1024px — ver App.jsx/Panel.jsx) ---- */
+
+.dashboard-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.painel-fixo {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.painel-fixo .painel-conteudo {
+  /* sem posicionamento absoluto aqui — altura fixa razoavel pra grafico
+     caber sem espremer (largura sempre 100% da tela, ja responsiva) */
+  height: 30px;
+}
+
+.painel-fixo .quotes-card {
+  /* tabela de cotacoes cresce com o conteudo em vez de cortar/rolar —
+     numa tela empilhada, rolar a pagina inteira e mais natural que rolar
+     dentro de uma caixinha */
+  height: auto;
+}
+
+.painel-fixo .painel-conteudo:has(.quotes-card) {
+  height: auto;
+}
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.chart-card--empty {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 15px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.chart-empty-msg {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.chart-title {
+  color: var(--text-2);
+  font-size: 30px; /* pedido do usuario: "esta muito pequeno ainda" — 3o incremento (13->15->17->19) */
+  font-weight: 6000;
+}
+
+/* pedido do usuario: "ao lado de risk índice coloque futuro e o valor que
+   estiver no Indice" — linha do titulo do card de cotacoes vira flex, com o
+   titulo na esquerda e o badge "Futuro: <valor>" na direita (ver
+   QuotesTable.jsx, prop simboloFuturo). */
+.quotes-titulo-linha {
+  display: 35px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px;
+  flex-wrap: wrap;
+  font-size: 35px;
+}
+
+.quotes-futuro {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 15px;
+  font-size: 35px;
+}
+
+.quotes-futuro-label {
+  font-size: 25px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.quotes-futuro-valor {
+  font-size: 35px;
+  font-weight: 60;
+  color: var(--text-1);
+}
+
+/* pedido do usuario: "adicione a variação também" (no badge Futuro, ao
+   lado do valor) — cor de alta/baixa vem das classes delta-up/delta-down
+   que ja existem (mesmas da coluna Variação da tabela). */
+.quotes-futuro-variacao {
+  font-size: 35px;
+  font-weight: 600;
+}
+
+.chart-headline {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 6px 0 14px 0;
+}
+
+.curve-chart-svg {
+  flex: 1 1 0;
+  min-height: 40px;
+  width: 100%;
+  display: block;
+}
+
+.chart-headline-value {
+  color: var(--text-1);
+  font-size: 35px;
+  font-weight: 6000;
+}
+
+.chart-delta {
+  font-size: 35px;
+}
+
+.delta-up {
+  color: var(--good);
+}
+
+.delta-down {
+  color: var(--critical);
+}
+
+/* ModeloSwingCard.jsx - v2.0.0 (2026-09-27) removeu o <select> proprio
+   (o ativo agora vem do contexto da view/pagina, nao de um seletor
+   independente - ver comentario no topo do ModeloSwingCard.jsx). So
+   sobrou este ajuste de espacamento da tabela do corpo do card. */
+.modelo-swing-corpo table {
+  margin-top: 4px;
+}
+
+/* ModeloSwingCard.jsx - v3.0.0 (2026-09-27): linha de destaque com a
+   direcao sugerida (compra/venda/sem sinal) + confianca, entre o
+   cabecalho de preco/vies e a tabela de detalhe - reaproveita .chart-delta
+   (mesmas cores delta-up/delta-down da Variacao em QuotesTable.jsx) e
+   .quotes-subtitle pro texto de confianca. */
+.modelo-swing-sinal {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.chart-axis-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1px;
+}
+
+.chart-axis-label {
+  color: var(--text-1); /* pedido do usuario: "mais branco" ainda — branco puro (era --muted, depois --text-2) */
+  font-size: 15px;
+}
+
+/* ---- grafico de juros (DI1) — multi-serie ---- */
+
+.juros-legenda {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0 4px 0;
+}
+
+.juros-legenda-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-2);
+  font-size: 25px; /* pedido do usuario: "esta muito pequeno ainda" — legenda (Last/Session Close) tambem aumentada */
+}
+
+.juros-legenda-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  flex: none;
+}
+
+.juros-scroll {
+  /* nao rola mais — pedido do usuario: "o grafico tem que se adaptar ao
+     card que ele esta" / "essa barra de rolagem tem que desaparecer". O
+     JurosChart.jsx agora sempre desenha o svg na largura exata do card
+     (nunca mais largo), entao overflow-x:hidden e so uma rede de seguranca
+     de arredondamento — nunca deveria precisar cortar nada de verdade. */
+  flex: 1 1 0;
+  min-height: 60px;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  margin-top: 6px;
+}
+
+.juros-svg {
+  display: block;
+}
+
+.juros-eixo-label {
+  fill: var(--text-1); /* pedido do usuario: "mais branco" ainda — branco puro (era --muted, depois --text-2) */
+  font-size: 30px; /* pedido do usuario 2026-09-24 (depois do fix de escala Y real-px):
+                       "aumente o tamanho da letra um pouquinho" -> testou 11 -> 22 -> 33 -> "30"
+                       (historico: 15 -> 11 -> 22 -> 33 -> 30) */
+}
+
+.juros-eixo-label-x {
+  /* pedido do usuario: "aumente um pouquinho a fonte dos eixos x" — so o
+     eixo X (datas/rotulos embaixo), o eixo Y (gradeY, valores em %) continua
+     em 10px. Depois, 2026-09-24 (mesmo dia do fix de escala Y real-px):
+     "agora a escala X com 30px tambem" — igualado ao eixo Y (15 -> 30). */
+  font-size: 30px;
+}
+
+/* ---- card do Trio (DDI real x FRC teorico) — resumo do spread ---- */
+
+.trio-spread-footer {
+  /* pedido do usuario: mostrar o "Trio" (DOL+DDI+DI1) — sem a perna DOL
+     ainda (ver api_server.py), a leitura do desalinhamento fica no numero
+     do spread por vertice, aqui embaixo do grafico DDI x FRC. */
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.trio-spread-item {
+  font-size: 25px;
+  color: var(--text-2);
+}
+
+.trio-spread-item--alerta {
+  /* |spread| acima do limiar (ver LIMIAR_SPREAD_ALERTA em App.jsx) — reusa
+     --critical so como destaque de "atencao", nao "ruim/bom": o sinal do
+     spread sozinho nao diz se e favoravel a INDICE ou DOLAR, so que os dois
+     cupons (real e teorico) estao mais desalinhados que o normal. */
+  color: var(--critical);
+  font-weight: 600;
+}
+
+/* ---- card "Dolar Teorico" (DolarTeoricoCard.jsx) ---- */
+
+.dolar-teorico-linhas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dolar-teorico-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 35px;
+}
+
+.dolar-teorico-valor {
+  color: var(--text-1);
+  font-size: 35px;
+  font-weight: 600;
+}
+
+.dolar-teorico-detalhe {
+  font-size: 35px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+/* pedido do usuario (2026-10-01): antes das ~10h10 BRT o spot do Dolar
+   Teorico vira estimado (anterior * variacao D1 do DXY, ver
+   _ptax_proxy_usdbrl_com_fallback() no api_server.py) -- essa tag deixa
+   visualmente claro que NAO e PTAX real ainda. */
+.dolar-teorico-estimado-tag {
+  color: var(--s-frc);
+  font-weight: 700;
+  font-size: 0.8em;
+  border: 1px solid var(--s-frc);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-right: 2px;
+}
+
+/* ---- quotes table ---- */
+
+.quotes-card {
+  padding: 20px;
+}
+
+.quotes-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quotes-subtitle {
+  color: var(--muted);
+  font-size: 35px;
+}
+
+.quotes-grid {
+  /* numero de colunas calculado em JS a partir da largura REAL do painel
+     (ver calcularNumColunas em QuotesTable.jsx) e aplicado via style inline
+     — pedido do usuario: "conforme eu estreito o box do painel quero que os
+     ativos se empilhem um embaixo do outro". O 1fr aqui e so um fallback
+     antes da 1a medicao (Panel.jsx ja da a largura real desde o primeiro
+     render, entao na pratica isso nunca aparece). Existia um
+     @media (max-width:900px) aqui antes — removido porque reagia a largura
+     da JANELA, nao do painel (o painel e redimensionado livremente por
+     dentro da tela, sem relacao com o tamanho dela — mesma pegadinha ja
+     resolvida pro JurosChart, ver comentario la). */
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th {
+  text-align: left;
+  font-size: 25px; /* pedido do usuario: "esta muito pequeno ainda" — 3o incremento (11->13->14->16) */
+  line-height: 20px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 0 16px 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+th.num,
+td.num {
+  text-align: right;
+}
+
+/* bug 2026-09-24 (pedido do usuario: "os sinais foram parar atras dos
+   numeros"): "+ 0,058%"/"- 0,058%" tem um espaco quebravel entre o sinal e
+   o numero (ver textoVariacao/textoVariacaoFuturo em QuotesTable.jsx) — em
+   colunas mais estreitas o navegador as vezes quebrava a linha bem nesse
+   espaco, jogando o "+"/"-" pra uma linha por conta enquanto o resto do
+   numero ia pra outra. Como o line-height da celula (ver "td" abaixo) e
+   fixado em px MENOR que o font-size de 30px do td.num, as duas linhas
+   quebradas ficavam sobrepostas, dando a impressao de um sinal minusculo
+   flutuando em cima do "%". nowrap tira a quebra (o espaco agora tambem foi
+   trocado por um nao-quebravel, entao isso e so uma segunda trava).*/
+td.num {
+  white-space: nowrap;
+}
+
+/* pedido do usuario: fonte SO nas colunas Variacao/Preco da tabela de
+   cotacoes (QuotesTable.jsx), sem mexer no tamanho da celula (padding/altura
+   continuam vindo do "td" abaixo) — comecou em 11 ("se fosse um excel eu
+   usaria 11 de tamanho"), depois pediu 16. As duas colunas ja usam
+   className="num", entao um td.num sozinho (mais especifico que o "td"
+   generico logo abaixo) resolve sem precisar de classe nova.
+   IMPORTANTE: aumentar so o font-size aqui SEM fixar line-height em px no
+   "td" abaixo fazia a linha da TABELA INTEIRA esticar — o navegador usa
+   line-height "normal" (relativo ao font-size) quando nao especificado, e a
+   altura da linha do <tr> e sempre a da celula mais alta ("mudou o tamanho
+   da celula", pedido do usuario). Corrigido fixando line-height em PX (nao
+   em em/relativo) no "td" — assim a altura da linha fica travada
+   independente do font-size de qualquer celula, inclusive se o numero aqui
+   mudar de novo no futuro. */
+td.num {
+  font-size: 30px; /* pedido do usuario: +2px na tabela de cotacoes, pra testar */
+}
+
+td {
+  padding: 12px 14.8px; /* pedido do usuario: ajuste fino final, 1px a menos que 11 */
+  border-bottom: 0.5px solid var(--grid);
+  color: var(--text-1);
+  font-size: 25px; /* pedido do usuario: aumentar para 15.5px */
+  line-height: 20px; /* pedido do usuario: "aumentou o tamanho das celulas, nao pode" — travado no valor
+     original (19px) pra nao esticar a linha so por causa da fonte maior */
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.ativo-nome {
+  font-weight: 600;
+}
+
+/* badges de causalidade de Granger "so um sentido" (causalidade.py, pedido
+   do usuario 2026-09-30: "adicione nas tabelas de risk mesmo ja
+   existentes") — ao lado do nome do ativo em QuotesTable.jsx, quando esse
+   ativo e um candidato a PREDITOR ANTECEDENTE do indice/dolar (nao so
+   correlacionado no mesmo instante). Cor separada do delta-up/delta-down
+   (aquelas sao direcao de preco, isto e "forca do sinal").
+   2026-09-30 (v2): virou DOIS badges independentes (Gi = causa_indice, Gd =
+   causa_dolar), desacoplados do grupo/card em que o ativo aparece — antes
+   so mostrava o badge do alvo do proprio card, mas a tabela em que o
+   ativo mora e decidida por CORRELACAO (correl.py), uma metrica diferente
+   da causalidade, entao um ativo causando INDICE podia morar na tabela Dolar
+   (correlacao mais forte com dolar) e o achado sumia sem aparecer em
+   lugar nenhum (pedido do usuario apos notar so 1 badge na tabela
+   Indice). Gi reaproveita --s-juros (azul, ja usado nas series de juros
+   do grafico do Trio); Gd reaproveita --s-frc (laranja, ja usado na serie
+   FRC do mesmo grafico) — os dois podem aparecer juntos na mesma
+   linha. */
+.causalidade-badge {
+  display: inline-block;
+  margin-left: 6px;
+  /* 2026-09-30: estava em 9px, ilegivel -- a celula do ativo (.ativo-nome,
+     dentro do "td" generico) usa font-size 25px nesse projeto (pedido do
+     usuario, monitor grande), entao um badge de 9px virava um pontinho
+     sem dar pra ler a letra. Pedido do usuario ("porque o SP500 e os
+     outros que tem causalidade com indice nao aparecem????" -- o badge
+     JA estava aparecendo, so ilegivel).
+     CUIDADO: o "td" generico (tokens.css) trava line-height em 20px
+     ("aumentou o tamanho das celulas, nao pode", pedido antigo do
+     usuario) -- um inline-block filho MAIS ALTO que isso estica a linha
+     mesmo com line-height travado (o navegador usa o maior entre os
+     dois). Por isso 14px (nao 16px) + padding vertical de 1px + borda de
+     1px = 14+2+2 = 18px de altura total, cabe dentro dos 20px com folga
+     e ainda fica bem mais legivel que os 9px originais. */
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 4px;
+  padding: 1px 5px;
+  vertical-align: middle;
+  cursor: help;
+}
+
+.causalidade-badge-indice {
+  color: var(--s-juros);
+  border: 1px solid var(--s-juros);
+}
+
+.causalidade-badge-dolar {
+  color: var(--s-frc);
+  border: 1px solid var(--s-frc);
+}
+
+/* CausalidadeLegenda.jsx — card explicando os badges Gi/dg acima, pedido
+   do usuario: "coloque um indice explicando o que e dg e gi... pontinhos
+   na mesma cor deles e do lado escrito causalidade com indice e
+   causalidade com dolar". Pontinhos reaproveitam as MESMAS variaveis de
+   cor dos badges (--s-juros/--s-frc) -- bate 1:1 com o que aparece nas
+   tabelas. */
+.causalidade-legenda-linhas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.causalidade-legenda-linha {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.causalidade-legenda-ponto {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+  align-self: center;
+}
+
+.causalidade-legenda-ponto-indice {
+  background: var(--s-juros);
+}
+
+.causalidade-legenda-ponto-dolar {
+  background: var(--s-frc);
+}
+
+.causalidade-legenda-sigla {
+  font-weight: 700;
+}
+
+/* ===== TAMANHOS DE FONTE DESTE CARD — mexa só aqui =====
+   .causalidade-legenda-card é a classe extra que colocamos no <div
+   className="chart-card ..."> do CausalidadeLegenda.jsx. Troque os 3
+   valores abaixo (em px) pra mudar o tamanho de: título do card, siglas
+   Gi/dg, e o texto explicativo ("— causalidade com Índice: ..."). Nada
+   fora deste card é afetado. */
+.causalidade-legenda-card {
+  --legenda-fonte-titulo: 30px;
+  --legenda-fonte-sigla: 16px;
+  --legenda-fonte-texto: 25px;
+}
+
+.causalidade-legenda-card .chart-title {
+  font-size: var(--legenda-fonte-titulo);
+}
+
+.causalidade-legenda-card .causalidade-legenda-sigla {
+  font-size: var(--legenda-fonte-sigla);
+}
+
+.causalidade-legenda-card .causalidade-legenda-linha .muted {
+  font-size: var(--legenda-fonte-texto);
+}
+/* ===== fim tamanhos de fonte CausalidadeLegenda ===== */
+
+.hora-muted {
+  color: var(--text-1); /* pedido do usuario: coluna hora com fonte branca */
+}
+
+/* celula de preco piscando — pedido do usuario: "celula piscante conforme
+   mudança do preço" (QuotesTable.jsx). Cor da pisca segue a direcao da
+   mudanca (sobe = verde, desce = vermelho, mesmos tokens --good/--critical
+   do delta-up/delta-down acima) — comeca colorida e desvanece pro
+   transparente, sem deixar residuo depois que a animacao termina. */
+/* pedido do usuario: "temos precos com X.xxx,xx, XX,xx, X,xxx... como
+   organizar pra ficar tudo alinhadinho?" — a celula de Preco vira um flex
+   container so pra alinhar os dois <span> (parte inteira/decimal) que o
+   QuotesTable.jsx agora renderiza (ver dividirNumeroFormatado). O
+   justify-content:flex-end mantem o bloco inteiro encostado na direita,
+   igual o td.num generico ja fazia com texto simples. */
+.preco-celula {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+}
+
+.preco-parte-inteira {
+  display: inline-block;
+  min-width: 8ch; /* cobre o maior valor de hoje (188.822, 7 chars) com folga */
+  text-align: right;
+}
+
+.preco-parte-decimal {
+  display: inline-block;
+  text-align: left;
+}
+
+.preco-pisca-up {
+  animation: piscaPreco 0.7s ease-out;
+  --cor-pisca: rgba(12, 163, 12, 0.35);
+}
+
+.preco-pisca-down {
+  animation: piscaPreco 0.7s ease-out;
+  --cor-pisca: rgba(208, 59, 59, 0.35);
+}
+
+@keyframes piscaPreco {
+  0% {
+    background-color: var(--cor-pisca);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* ---- desvios de preco / consenso MTF (DesviosPainel.jsx) ----
+   pedido do usuario (2026-09-23): estilo inline era dificil de editar a
+   mao ("voce devia ter jogado no css e o DesviosPainel.jsx puxava assim
+   fica mais facil de editar") — movido pra ca; o componente so aplica
+   className agora. Ajuste font-size/padding aqui direto. */
+
+.dp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dp-bloco {
+  background: var(--page);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.dp-cabecalho {
+  display: flex;
+  gap: 1px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.dp-titulo {
+  font-weight: 700;
+  font-size: 35px;
+  color: var(--text-1);
+}
+
+.dp-preco-atual {
+  font-size: 35px;
+  color: var(--muted);
+}
+
+.dp-linha {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 15px 0;
+}
+
+.dp-linha-n {
+  font-weight: 700;
+  font-size: 35px;
+  min-width: 28px;
+}
+
+.dp-linha-preco {
+  font-weight: 700;
+  font-size: 35px;
+}
+
+.dp-linha--acima .dp-linha-n,
+.dp-linha--acima .dp-linha-preco {
+  color: var(--critical);
+}
+
+.dp-linha--abaixo .dp-linha-n,
+.dp-linha--abaixo .dp-linha-preco {
+  color: var(--good);
+}
+
+.dp-media {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 15px 0;
+}
+
+.dp-media-simbolo {
+  font-weight: 700;
+  font-size: 35px;
+  color: var(--text-1);
+  min-width: 28px;
+}
+
+.dp-media-valor {
+  font-weight: 700;
+  font-size: 35px;
+  color: var(--text-1);
+}
+
+.dp-vazio {
+  font-size: 25px;
+  color: var(--muted);
+}
+
+.dp-titulo--vazio {
+  margin-bottom: 15px;
+}
+
+/* ---- noticias em tempo real (NoticiasPainel.jsx) ---- */
+
+.noticias-lista {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.noticias-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.noticias-item:last-child {
+  border-bottom: none;
+}
+
+.noticias-hora {
+  flex-shrink: 0;
+  min-width: 36px;
+  font-size: 30px;
+  color: var(--muted);
+}
+
+.noticias-texto {
+  font-size: 35px;
+  line-height: 1.4;
+  color: var(--text-1);
+}
+
+.noticias-vazio {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 10px;
+}
