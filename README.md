@@ -1,7 +1,7 @@
 # Dashboard Pre-Market
 
 Dashboard no navegador para estudo de cenários e apoio à decisão de posição em
-dois ativos futuros (Índice e Dólar), cruzando sinais de múltiplos ativos e
+dois ativos futuros (Índice e Dólar e outros ativos de forex e indices internacionais), cruzando sinais de múltiplos ativos e
 múltiplos timeframes (MTF) antes e durante o pregão.
 
 A ideia central: em vez de olhar o ativo isoladamente, o sistema acompanha um
